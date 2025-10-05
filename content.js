@@ -1,19 +1,14 @@
 (function() {
-  console.log('🎯 FoodParty Filter: Starting...');
-  
-  // Inject script from file to bypass CSP
+  // Inject the interceptor script into the page
   const script = document.createElement('script');
   script.src = chrome.runtime.getURL('injected.js');
   script.onload = function() {
     this.remove();
-    console.log('✅ Interceptor script loaded');
     
-    // Load and send config to page
+    // Send configuration to injected script
     chrome.storage.sync.get(['maxPrice'], function(result) {
       const maxPrice = result.maxPrice || null;
-      console.log('💾 Sending config to page, maxPrice:', maxPrice);
       
-      // Send config via custom event
       const event = new CustomEvent('foodparty-filter-config', {
         detail: { maxPrice: maxPrice }
       });
@@ -21,21 +16,11 @@
     });
   };
   
-  // Inject as early as possible
-  const target = document.documentElement || document.head || document.body;
-  if (target) {
-    target.appendChild(script);
-  } else {
-    // If no element exists yet, wait for DOM
-    document.addEventListener('DOMContentLoaded', function() {
-      (document.head || document.documentElement).appendChild(script);
-    });
-  }
+  (document.head || document.documentElement).appendChild(script);
   
-  // Listen for filter updates
+  // Listen for filter updates from popup
   chrome.runtime.onMessage.addListener(function(request) {
     if (request.action === 'filterUpdated') {
-      console.log('🔄 Filter updated, reloading page...');
       location.reload();
     }
   });

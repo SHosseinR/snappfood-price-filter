@@ -1,15 +1,13 @@
 (function() {
-  // Get MAX_PRICE from extension storage via custom event
   let MAX_PRICE = null;
   
+  // Listen for configuration from content script
   window.addEventListener('foodparty-filter-config', function(e) {
     MAX_PRICE = e.detail.maxPrice;
-    console.log('🎯 Filter config received:', MAX_PRICE);
+    console.log('FoodParty Filter Active - Max Price:', MAX_PRICE?.toLocaleString(), 'Toman');
   });
   
-  console.log('🚀 Intercepting XMLHttpRequest...');
-  
-  // Save original XHR
+  // Save original XMLHttpRequest methods
   const OriginalXHR = window.XMLHttpRequest;
   const originalOpen = OriginalXHR.prototype.open;
   const originalSend = OriginalXHR.prototype.send;
@@ -22,57 +20,57 @@
     this._url = url;
     this._requestId = ++xhrCounter;
     
-    console.log(`[XHR #${this._requestId}] 📡 OPEN: ${method} ${url}`);
+    // console.log(`[XHR #${this._requestId}] 📡 OPEN: ${method} ${url}`);
     
     return originalOpen.apply(this, [method, url, ...args]);
   };
   
-  // Override XHR send
+  // Override XMLHttpRequest.send to intercept responses
   OriginalXHR.prototype.send = function(data) {
     const xhr = this;
     const requestId = this._requestId;
     const url = this._url || '';
     
+    // Only intercept mobile-offers API calls
     if (url.includes('mobile-offers')) {
       console.log(`[XHR #${requestId}] ✅ mobile-offers detected!`);
       
       // Store original handlers
       const originalOnReadyStateChange = xhr.onreadystatechange;
-      const originalOnLoad = xhr.onload;
       
-      // Override onreadystatechange
       xhr.onreadystatechange = function(e) {
+        // Wait for complete response
         if (xhr.readyState === 4 && xhr.status === 200) {
           console.log(`[XHR #${requestId}] 📥 Response received`);
           
           try {
-            const originalResponse = xhr.responseText;
-            const data = JSON.parse(originalResponse);
-            
-            console.log(`[XHR #${requestId}] 📊 Original products:`, data?.data?.products?.length);
-            
-            if (data?.data?.products && MAX_PRICE) {
-              const originalCount = data.data.products.length;
+            const responseData = JSON.parse(xhr.responseText);
+            console.log("first bitch", MAX_PRICE);
+            // Filter products if MAX_PRICE is set
+            if (responseData?.data?.products && Array.isArray(responseData.data.products) && MAX_PRICE) {
+                console.log("response data bro", responseData.data.products)
+              const originalCount = responseData.data.products.length;
               
-              // Filter products
-              data.data.products = data.data.products.filter(product => {
+              // Filter products by final price
+              responseData.data.products = responseData.data.products.filter(product => {
                 const price = product.price || 0;
                 const discount = product.discount || 0;
                 const finalPrice = price - discount;
                 return finalPrice <= MAX_PRICE;
               });
               
-              const filteredCount = data.data.products.length;
+              const filteredCount = responseData.data.products.length;
+              const removedCount = originalCount - filteredCount;
               
-              console.log(`[XHR #${requestId}] 🔧 Filtered: ${originalCount} → ${filteredCount} (max: ${MAX_PRICE})`);
+              console.log(`✓ Filtered ${removedCount} items: ${originalCount} → ${filteredCount} products (max: ${MAX_PRICE.toLocaleString()} Toman)`);
               
               // Update total count
-              if (data.data.total_count !== undefined) {
-                data.data.total_count = filteredCount;
+              if (responseData.data.total_count !== undefined) {
+                responseData.data.total_count = filteredCount;
               }
               
-              // Override response properties
-              const modifiedResponse = JSON.stringify(data);
+              // Replace response with filtered data
+              const modifiedResponse = JSON.stringify(responseData);
               
               Object.defineProperty(xhr, 'responseText', {
                 writable: true,
@@ -83,13 +81,9 @@
                 writable: true,
                 value: modifiedResponse
               });
-              
-              console.log(`[XHR #${requestId}] ✅ Response modified successfully`);
-            } else if (!MAX_PRICE) {
-              console.log(`[XHR #${requestId}] ⚠️ No filter set, passing through`);
             }
           } catch (error) {
-            console.error(`[XHR #${requestId}] ❌ Error filtering:`, error);
+            console.error('FoodParty Filter Error:', error);
           }
         }
         
@@ -98,18 +92,10 @@
           return originalOnReadyStateChange.apply(xhr, arguments);
         }
       };
-      
-      // Also override onload just in case
-      xhr.onload = function(e) {
-        console.log(`[XHR #${requestId}] 📨 onload triggered`);
-        if (originalOnLoad) {
-          return originalOnLoad.apply(xhr, arguments);
-        }
-      };
     }
     
     return originalSend.apply(xhr, arguments);
   };
   
-  console.log('✅ XMLHttpRequest interceptor installed');
+  console.log('FoodParty Price Filter: Interceptor installed');
 })();

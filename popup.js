@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Save button click handler
   saveBtn.addEventListener('click', function() {
     const maxPrice = parseInt(maxPriceInput.value);
     
@@ -23,12 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
       status.textContent = `فیلتر ذخیره شد: ${maxPrice.toLocaleString('fa-IR')} تومان - صفحه را رفرش کنید`;
       status.className = 'status success';
       
-      // Try to notify if on snappfood
+      // Try to notify content script
       chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         if (tabs[0] && tabs[0].url && tabs[0].url.includes('snappfood.ir')) {
-          chrome.tabs.sendMessage(tabs[0].id, {action: 'filterUpdated'}, function(response) {
+          chrome.tabs.sendMessage(tabs[0].id, {action: 'filterUpdated'}, function() {
             if (chrome.runtime.lastError) {
-              console.log('Content script not ready');
+              // Ignore error if content script not ready
             }
           });
         }
