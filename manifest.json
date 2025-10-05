@@ -1,11 +1,10 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Snappfood Price Filter",
   "version": "1.0",
   "description": "Filters food party items based on a maximum final price.",
-  "permissions": ["storage"],
-  "host_permissions": ["*://*.snappfood.ir/*"],
-  "action": {
+  "permissions": ["storage", "*://*.snappfood.ir/*"],
+  "browser_action": {
     "default_popup": "popup.html"
   },
   "content_scripts": [
@@ -15,12 +14,7 @@
       "run_at": "document_start"
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["interceptor.js"],
-      "matches": ["*://*.snappfood.ir/*"]
-    }
-  ],
+  "web_accessible_resources": ["interceptor.js"],
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
