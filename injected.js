@@ -1,54 +1,39 @@
 (function() {
-  let MAX_PRICE = null;
+  // Get MAX_PRICE from script tag's data attribute
+  const scriptTag = document.getElementById('foodparty-filter-script') || document.currentScript;
+  const MAX_PRICE = scriptTag ? parseInt(scriptTag.getAttribute('data-max-price')) : null;
   
-  // Listen for configuration from content script
-  window.addEventListener('foodparty-filter-config', function(e) {
-    MAX_PRICE = e.detail.maxPrice;
-    console.log('FoodParty Filter Active - Max Price:', MAX_PRICE?.toLocaleString(), 'Toman');
-  });
+  console.log('FoodParty Filter - MAX_PRICE loaded:', MAX_PRICE);
+  console.log('FoodParty Filter - Active:', MAX_PRICE ? 'YES - ' + MAX_PRICE.toLocaleString() + ' Toman' : 'NO FILTER');
   
   // Save original XMLHttpRequest methods
   const OriginalXHR = window.XMLHttpRequest;
   const originalOpen = OriginalXHR.prototype.open;
   const originalSend = OriginalXHR.prototype.send;
   
-  let xhrCounter = 0;
-  
-  // Override XHR open
+  // Override XMLHttpRequest.open to track URLs
   OriginalXHR.prototype.open = function(method, url, ...args) {
-    this._method = method;
     this._url = url;
-    this._requestId = ++xhrCounter;
-    
-    // console.log(`[XHR #${this._requestId}] 📡 OPEN: ${method} ${url}`);
-    
     return originalOpen.apply(this, [method, url, ...args]);
   };
   
   // Override XMLHttpRequest.send to intercept responses
   OriginalXHR.prototype.send = function(data) {
     const xhr = this;
-    const requestId = this._requestId;
     const url = this._url || '';
     
     // Only intercept mobile-offers API calls
     if (url.includes('mobile-offers')) {
-      console.log(`[XHR #${requestId}] ✅ mobile-offers detected!`);
-      
-      // Store original handlers
       const originalOnReadyStateChange = xhr.onreadystatechange;
       
       xhr.onreadystatechange = function(e) {
         // Wait for complete response
         if (xhr.readyState === 4 && xhr.status === 200) {
-          console.log(`[XHR #${requestId}] 📥 Response received`);
-          
           try {
             const responseData = JSON.parse(xhr.responseText);
-            console.log("first bitch", MAX_PRICE);
-            // Filter products if MAX_PRICE is set
-            if (responseData?.data?.products && Array.isArray(responseData.data.products) && MAX_PRICE) {
-                console.log("response data bro", responseData.data.products)
+            
+            // Filter products if MAX_PRICE is set and is a valid number
+            if (responseData?.data?.products && Array.isArray(responseData.data.products) && MAX_PRICE && MAX_PRICE > 0) {
               const originalCount = responseData.data.products.length;
               
               // Filter products by final price
@@ -81,6 +66,8 @@
                 writable: true,
                 value: modifiedResponse
               });
+            } else if (!MAX_PRICE) {
+              console.log('ℹ️ No price filter set - showing all items');
             }
           } catch (error) {
             console.error('FoodParty Filter Error:', error);
