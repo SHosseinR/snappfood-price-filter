@@ -1,40 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "FoodParty Price Filter",
+  "name": "Snappfood Price Filter",
   "version": "1.0",
-  "description": "Filter FoodParty items by maximum price",
+  "description": "Filters food party items based on a maximum final price.",
   "permissions": ["storage"],
-  "host_permissions": [
-    "*://snappfood.ir/*",
-    "*://foodparty.zoodfood.com/*"
-  ],
-  "background": {
-    "service_worker": "background.js"
+  "host_permissions": ["*://*.snappfood.ir/*"],
+  "action": {
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["*://snappfood.ir/*"],
+      "matches": ["*://*.snappfood.ir/*"],
       "js": ["content.js"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["injected.js"],
-      "matches": ["*://snappfood.ir/*"]
+      "resources": ["interceptor.js"],
+      "matches": ["*://*.snappfood.ir/*"]
     }
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
-  }
+  ]
 }

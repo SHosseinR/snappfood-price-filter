@@ -1,39 +1,26 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const maxPriceInput = document.getElementById('maxPrice');
-  const saveBtn = document.getElementById('saveBtn');
-  const status = document.getElementById('status');
+// popup.js
+const maxPriceInput = document.getElementById('maxPrice');
+const saveButton = document.getElementById('saveButton');
 
-  // Load saved price
-  chrome.storage.sync.get(['maxPrice'], function(result) {
+// Load any saved price when the popup opens
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.storage.local.get(['maxPrice'], (result) => {
     if (result.maxPrice) {
       maxPriceInput.value = result.maxPrice;
     }
   });
+});
 
-  // Save button click handler
-  saveBtn.addEventListener('click', function() {
-    const maxPrice = parseInt(maxPriceInput.value);
-    
-    if (!maxPrice || maxPrice <= 0) {
-      status.textContent = 'لطفا یک عدد معتبر وارد کنید';
-      status.className = 'status';
-      return;
-    }
-
-    chrome.storage.sync.set({ maxPrice: maxPrice }, function() {
-      status.textContent = `فیلتر ذخیره شد: ${maxPrice.toLocaleString('fa-IR')} تومان - صفحه را رفرش کنید`;
-      status.className = 'status success';
-      
-      // Try to notify content script
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if (tabs[0] && tabs[0].url && tabs[0].url.includes('snappfood.ir')) {
-          chrome.tabs.sendMessage(tabs[0].id, {action: 'filterUpdated'}, function() {
-            if (chrome.runtime.lastError) {
-              // Ignore error if content script not ready
-            }
-          });
-        }
-      });
+// Save the new price and reload the tab when the button is clicked
+saveButton.addEventListener('click', () => {
+  const maxPrice = maxPriceInput.value;
+  chrome.storage.local.set({ maxPrice: parseInt(maxPrice, 10) || 0 }, () => {
+    console.log('Max price saved:', maxPrice);
+    // Reload the current tab to apply the changes
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.reload(tabs[0].id);
+      }
     });
   });
 });
