@@ -1,4 +1,3 @@
-// popup.js
 const maxPriceInput = document.getElementById('maxPrice');
 const saveButton = document.getElementById('saveButton');
 
