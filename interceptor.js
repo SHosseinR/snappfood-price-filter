@@ -1,6 +1,3 @@
-// interceptor.js
-console.log('[Filter Interceptor] Script running in page context. Now intercepting Fetch and XHR.');
-
 // =================================================================================
 // 1. FETCH INTERCEPTOR (for modern sites)
 // =================================================================================
@@ -9,7 +6,6 @@ window.fetch = async (...args) => {
   const url = args[0];
 
   if (typeof url === 'string' && (url.includes('/mobile-offers/') || url.includes('/mobile/v2/restaurant/details/dynamic'))) {
-    console.log(`[Filter Interceptor] Intercepted FETCH request to: ${url}`);
     return handleFiltering(url, originalFetch(...args));
   }
 
@@ -31,13 +27,11 @@ XMLHttpRequest.prototype.open = function(...args) {
 
 XMLHttpRequest.prototype.send = function(...args) {
   if (this._url && (this._url.includes('/mobile-offers/') || this._url.includes('/mobile/v2/restaurant/details/dynamic'))) {
-    console.log(`[Filter Interceptor] Intercepted XHR request to: ${this._url}`);
 
     // Add a listener that fires when the request is complete
     this.addEventListener('load', () => {
       const maxPrice = parseInt(document.documentElement.dataset.maxPrice, 10);
       if (!maxPrice || isNaN(maxPrice)) {
-        console.log('[Filter Interceptor] XHR: No valid max price set. Not filtering.');
         return; // Don't modify the response
       }
 
@@ -51,7 +45,6 @@ XMLHttpRequest.prototype.send = function(...args) {
           modifiedData = filterRestaurantData(data, maxPrice);
         } else {
           const originalProductCount = data.data.products.length;
-          console.log(`[Filter Interceptor] XHR: Original product count: ${originalProductCount}`);
 
           // The core filtering logic
           const filteredProducts = data.data.products.filter(product => {
@@ -60,7 +53,6 @@ XMLHttpRequest.prototype.send = function(...args) {
           });
 
           const newProductCount = filteredProducts.length;
-          console.log(`[Filter Interceptor] XHR: New product count after filtering: ${newProductCount}`);
 
           // Modify the original data object
           data.data.products = filteredProducts;
@@ -90,11 +82,9 @@ XMLHttpRequest.prototype.send = function(...args) {
 async function handleFiltering(url, responsePromise) {
   const maxPrice = parseInt(document.documentElement.dataset.maxPrice, 10);
   if (!maxPrice || isNaN(maxPrice)) {
-    console.log('[Filter Interceptor] No valid max price set. Not filtering.');
     return responsePromise;
   }
 
-  console.log(`[Filter Interceptor] Applying filter for max final price: ${maxPrice}`);
   const response = await responsePromise;
   const clonedResponse = response.clone();
   
@@ -106,7 +96,6 @@ async function handleFiltering(url, responsePromise) {
       modifiedData = filterRestaurantData(data, maxPrice);
     } else {
       const originalProductCount = data.data.products.length;
-      console.log(`[Filter Interceptor] Original product count: ${originalProductCount}`);
 
       const filteredProducts = data.data.products.filter(product => {
         const finalPrice = product.price - product.discount;
@@ -114,7 +103,6 @@ async function handleFiltering(url, responsePromise) {
       });
 
       const newProductCount = filteredProducts.length;
-      console.log(`[Filter Interceptor] New product count after filtering: ${newProductCount}`);
 
       data.data.products = filteredProducts;
       data.data.total_count = newProductCount;
@@ -142,7 +130,6 @@ function filterRestaurantData(data, maxPrice) {
   let totalOriginalCount = 0;
   let totalNewCount = 0;
 
-  console.log('[Filter Interceptor] Looping through menu categories to filter products...');
 
   // Loop through each menu category (e.g., "فود پارتی", "پیتزا")
   data.data.menus.forEach(menu => {
@@ -160,8 +147,6 @@ function filterRestaurantData(data, maxPrice) {
     }
   });
 
-  console.log(`[Filter Interceptor] Total original products across all categories: ${totalOriginalCount}`);
-  console.log(`[Filter Interceptor] Total new products after filtering: ${totalNewCount} 🎉`);
 
   return data; // Return the modified data object
 }

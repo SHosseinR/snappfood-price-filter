@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
 saveButton.addEventListener('click', () => {
   const maxPrice = maxPriceInput.value;
   chrome.storage.local.set({ maxPrice: parseInt(maxPrice, 10) || 0 }, () => {
-    console.log('Max price saved:', maxPrice);
     // Reload the current tab to apply the changes
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
